@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    "target": "ES2021",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ESNext"],
+    "types": ["node"],
+
+    /* Prisma & Metadata */
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+
+    /* Outputs */
+    "outDir": "./dist",
+    "sourceMap": true,
+    "declaration": true,
+
+    /* Strictness */
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": false,
+
+    /* Style & Compatibility */
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true
+  },
+  "include": ["src/**/*", "prisma/**/*.ts", "prisma.config.ts"],
+  "exclude": ["node_modules"]
+}
