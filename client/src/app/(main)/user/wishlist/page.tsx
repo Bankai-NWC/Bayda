@@ -1,15 +1,15 @@
-'use client';
+import { getWishlistAction } from '@/actions/wishlist-actions';
 
-import { BookmarkX } from 'lucide-react';
+import { WishlistClient } from './_components/WishlistClient';
 
-function Wishlist() {
+export default async function WishlistPage() {
+  const { items } = await getWishlistAction();
+
   return (
-    <div className="flex flex-col gap-8">
-      <BookmarkX />
-      <p className="text-sm uppercase">You don&apos;t have any saved items</p>
-      <p className="text-sm">Save your favorite items and share them with anyone</p>
-    </div>
+    <main className="container mx-auto px-4 max-w-5xl">
+      <h1 className="text-3xl font-bold uppercase tracking-tight mb-8">Wishlist</h1>
+
+      <WishlistClient initialItems={items} />
+    </main>
   );
 }
-
-export default Wishlist;

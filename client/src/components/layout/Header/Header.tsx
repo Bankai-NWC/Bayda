@@ -44,15 +44,15 @@ export function Header() {
         <div className="flex items-center gap-4">
           {user && (
             <div className="flex items-center gap-4">
-              <Button variant="ghost" size="icon" className="relative">
-                <ShoppingBag className="h-5 w-5" />
-                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
+              <Link href="/user/cart" className="relative">
+                <ShoppingBag className="h-4.5 w-4.5" />
+                <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
                   0
                 </span>
-              </Button>
-              <Button variant="ghost" size="icon" className="relative">
-                <Bookmark className="h-5 w-5" />
-              </Button>
+              </Link>
+              <Link href="/user/wishlist" className="relative">
+                <Bookmark className="h-4.5 w-4.5" />
+              </Link>
             </div>
           )}
 

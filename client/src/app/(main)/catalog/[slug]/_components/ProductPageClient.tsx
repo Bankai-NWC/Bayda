@@ -4,6 +4,7 @@ import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Ruler } from 'lucide
 import Image from 'next/image';
 import { useMemo, useState } from 'react';
 
+import { WishlistButton } from '@/components/ui/WishlistButton/WishlistButton';
 import { GenderLabel, Product } from '@/types/product';
 
 import { ProductBreadcrumbs } from './ProductBreadcrumbs';
@@ -177,7 +178,13 @@ export function ProductPageClient({
             </div>
 
             <div>
-              <h1 className="text-2xl font-bold uppercase tracking-tight mb-2">{product.name}</h1>
+              <div className="flex flex-row justify-between items-center">
+                <h1 className="text-2xl font-bold uppercase tracking-tight mb-2">{product.name}</h1>
+                <WishlistButton
+                  variantId={activeVariant.id}
+                  className="p-2 border border-zinc-200 hover:border-black"
+                />
+              </div>
               <div className="flex items-center gap-3">
                 {salePrice ? (
                   <>

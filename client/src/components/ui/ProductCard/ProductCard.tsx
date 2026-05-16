@@ -6,6 +6,8 @@ import { useState } from 'react';
 
 import { ProductListItem } from '@/types/product';
 
+import { WishlistButton } from '../WishlistButton/WishlistButton';
+
 export function ProductCard({
   product,
   activeColorId,
@@ -95,6 +97,13 @@ export function ProductCard({
             SALE
           </div>
         )}
+        <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+          <WishlistButton
+            variantId={activeVariant?.id}
+            size="sm"
+            className="bg-white/80 backdrop-blur-sm p-1.5 rounded-full hover:bg-white"
+          />
+        </div>
       </div>
 
       <div className="space-y-0.5">

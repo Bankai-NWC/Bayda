@@ -10,6 +10,7 @@ import catalogRouter from './routes/catalog-router.js';
 import colorRouter from './routes/color-routee.js';
 import productRouter from './routes/product-router.js';
 import userRouter from './routes/user-routes.js';
+import wishlistRouter from './routes/wishlist-router.js';
 
 dotenv.config();
 
@@ -28,6 +29,7 @@ app.use(UserRoutes.BASE, userRouter);
 app.use(ProductRoutes.BASE, productRouter);
 app.use('/api', colorRouter);
 app.use('/api/catalog', catalogRouter);
+app.use('/api/wishlist', wishlistRouter);
 app.use(errorMiddleware);
 
 const start = async () => {
