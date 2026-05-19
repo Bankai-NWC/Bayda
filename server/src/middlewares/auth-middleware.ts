@@ -3,7 +3,7 @@ import { ApiError } from './error-middleware.js';
 
 export function authMiddleware(req: any, res: any, next: any) {
   try {
-    const authHeader = req.headers.authorization;
+    const authHeader = req.get('authorization');
 
     console.log('Authorization header:', req.headers.authorization);
     if (!authHeader) {

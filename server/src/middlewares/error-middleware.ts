@@ -26,6 +26,10 @@ export class ApiError extends Error {
   static Internal(message: string, errors: any = []): ApiError {
     return new ApiError(500, message, errors);
   }
+
+  static Forbidden(message: string, errors: any = []): ApiError {
+    return new ApiError(403, message, errors);
+  }
 }
 
 export function errorMiddleware(err: any, req: Request, res: Response, next: NextFunction) {

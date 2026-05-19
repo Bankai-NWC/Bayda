@@ -13,6 +13,11 @@ declare global {
 
     interface Request {
       files?: Express.Multer.File[];
+      user?: {
+        id: number;
+        email: string;
+        role: import('@prisma/client').Role;
+      };
     }
   }
 }
