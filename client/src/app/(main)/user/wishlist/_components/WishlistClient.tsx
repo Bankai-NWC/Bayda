@@ -42,7 +42,7 @@ export function WishlistClient({ initialItems }: { initialItems: WishlistItem[] 
         const price = Number(variant.price);
         const salePrice = variant.salePrice ? Number(variant.salePrice) : null;
         const href = variant.color
-          ? `/catalog/${product.slug}?colorId=${variant.color.id}`
+          ? `/catalog/${product.slug}?color=${variant.color.name}`
           : `/catalog/${product.slug}`;
 
         return (
@@ -52,7 +52,7 @@ export function WishlistClient({ initialItems }: { initialItems: WishlistItem[] 
                 variantId={variant.id}
                 size="sm"
                 className="bg-white/80 backdrop-blur-sm p-1.5 rounded-full hover:bg-white"
-                onRemove={() => handleRemove(variant.id)} // ← коллбэк
+                onRemove={() => handleRemove(variant.id)}
               />
             </div>
 

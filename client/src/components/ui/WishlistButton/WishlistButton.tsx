@@ -9,6 +9,7 @@ import {
   removeFromWishlistAction,
 } from '@/actions/wishlist-actions';
 import { cn } from '@/lib/utils';
+import { useUserStore } from '@/store/useUserStore';
 
 interface Props {
   variantId: number;
@@ -18,14 +19,14 @@ interface Props {
 }
 
 export function WishlistButton({ variantId, className, size = 'md', onRemove }: Props) {
+  const { user } = useUserStore();
   const [inWishlist, setInWishlist] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    checkWishlistAction(variantId).then((res) => {
-      setInWishlist(res.inWishlist);
-      setIsLoading(false);
-    });
+    checkWishlistAction(variantId)
+      .then((res) => setInWishlist(res.inWishlist))
+      .finally(() => setIsLoading(false));
   }, [variantId]);
 
   async function handleToggle(e: React.MouseEvent) {
@@ -50,19 +51,21 @@ export function WishlistButton({ variantId, className, size = 'md', onRemove }: 
   const iconSize = size === 'sm' ? 'w-4 h-4' : 'w-5 h-5';
 
   return (
-    <button
-      type="button"
-      onClick={handleToggle}
-      disabled={isLoading}
-      aria-label={inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
-      className={cn('transition-all disabled:opacity-50', className)}
-    >
-      <Bookmark
-        className={cn(iconSize, 'transition-all', {
-          'fill-black stroke-black': inWishlist,
-          'stroke-current fill-none': !inWishlist,
-        })}
-      />
-    </button>
+    user && (
+      <button
+        type="button"
+        onClick={handleToggle}
+        disabled={isLoading}
+        aria-label={inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
+        className={cn('transition-all disabled:opacity-50', className)}
+      >
+        <Bookmark
+          className={cn(iconSize, 'transition-all', {
+            'fill-black stroke-black': inWishlist,
+            'stroke-current fill-none': !inWishlist,
+          })}
+        />
+      </button>
+    )
   );
 }
