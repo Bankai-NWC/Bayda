@@ -1,9 +1,24 @@
 'use client';
 
-import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Ruler } from 'lucide-react';
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  Minus,
+  Plus,
+  Ruler,
+  ShoppingBag,
+} from 'lucide-react';
 import Image from 'next/image';
-import { useMemo, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useMemo, useState, useTransition } from 'react';
 
+import {
+  addToCartAction,
+  getCartItemQuantityAction,
+  updateCartItemAction,
+} from '@/actions/cart-actions';
 import { WishlistButton } from '@/components/ui/WishlistButton/WishlistButton';
 import { GenderLabel, Product } from '@/types/product';
 
@@ -17,6 +32,13 @@ export function ProductPageClient({
   product: Product;
   initialColorId?: number | null;
 }) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
+
+  const [cartQuantity, setCartQuantity] = useState(0);
+  const [isCartLoading, setIsCartLoading] = useState(true);
+
   const uniqueColors = useMemo(() => {
     const seen = new Set<number>();
     return product.variants
@@ -56,6 +78,42 @@ export function ProductPageClient({
     setActiveColorId(colorId);
     const first = product.variants.find((v) => v.color?.id === colorId);
     if (first) setActiveVariantId(first.id);
+
+    const colorName = uniqueColors.find((c) => c.id === colorId)?.name;
+    const params = new URLSearchParams(searchParams.toString());
+    if (colorName) {
+      params.set('color', colorName);
+    } else {
+      params.delete('color');
+    }
+    router.replace(`?${params.toString()}`, { scroll: false });
+  }
+
+  function handleVariantChange(variantId: number) {
+    setActiveVariantId(variantId);
+    setActiveImageIndex(0);
+  }
+
+  useEffect(() => {
+    getCartItemQuantityAction(activeVariant.id).then((qty) => {
+      setCartQuantity(qty);
+      setIsCartLoading(false);
+    });
+  }, [activeVariant.id]);
+
+  async function handleAddToCart() {
+    startTransition(async () => {
+      const res = await addToCartAction(activeVariant.id, 1);
+      if (res.success) setCartQuantity(1);
+    });
+  }
+
+  async function handleQuantityChange(delta: number) {
+    const newQty = cartQuantity + delta;
+    startTransition(async () => {
+      const res = await updateCartItemAction(activeVariant.id, newQty);
+      if (res.success) setCartQuantity(newQty);
+    });
   }
 
   const images = useMemo(() => {
@@ -63,24 +121,13 @@ export function ProductPageClient({
     return variantImgs.length > 0 ? variantImgs : product.images;
   }, [activeVariant, product.images]);
 
-  const nextImage = () => {
-    setActiveImageIndex((prev) => (prev + 1) % images.length);
-  };
-
-  const prevImage = () => {
-    setActiveImageIndex((prev) => (prev - 1 + images.length) % images.length);
-  };
-
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const activeImage = images[activeImageIndex] ?? images[0];
 
-  function handleVariantChange(variantId: number) {
-    setActiveVariantId(variantId);
-    setActiveImageIndex(0);
-  }
+  const nextImage = () => setActiveImageIndex((prev) => (prev + 1) % images.length);
+  const prevImage = () => setActiveImageIndex((prev) => (prev - 1 + images.length) % images.length);
 
   const [showSizeChart, setShowSizeChart] = useState(false);
-
   const [showMaterials, setShowMaterials] = useState(false);
 
   const price = Number(activeVariant?.price ?? 0);
@@ -132,28 +179,20 @@ export function ProductPageClient({
                   >
                     <ChevronRight className="w-5 h-5" />
                   </button>
-
                   <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/20 backdrop-blur-md px-2 py-1 rounded-full text-[10px] text-white font-medium">
                     {activeImageIndex + 1} / {images.length}
                   </div>
                 </>
               )}
               {salePrice && (
-                <div className="absolute top-3 left-3 bg-black text-white text-xs px-2 py-1 font-medium tracking-wide">
+                <div className="absolute top-3 left-3 bg-black text-white text-xs uppercase px-2 py-1 font-medium tracking-wide">
                   SALE
                 </div>
               )}
             </div>
 
             {images.length > 1 && (
-              <div
-                className="flex gap-2 overflow-x-auto pb-2
-                [&::-webkit-scrollbar]:h-1.5
-                [&::-webkit-scrollbar-track]:bg-transparent
-                [&::-webkit-scrollbar-thumb]:bg-black
-                [&::-webkit-scrollbar-thumb]:rounded-full
-                hover:[&::-webkit-scrollbar-thumb]:bg-zinc-800"
-              >
+              <div className="flex gap-2 overflow-x-auto pb-2 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-black [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-zinc-800">
                 {images.map((img, i) => (
                   <button
                     key={img.id}
@@ -269,17 +308,41 @@ export function ProductPageClient({
               </div>
             )}
 
-            <div className="space-y-2 pt-2">
-              <button
-                disabled={!inStock}
-                className={`w-full py-4 text-sm font-semibold uppercase tracking-widest transition-colors ${
-                  inStock
-                    ? 'bg-black text-white hover:bg-zinc-800'
-                    : 'bg-zinc-100 text-zinc-400 cursor-not-allowed'
-                }`}
-              >
-                {inStock ? 'Add to Cart' : 'Out of Stock'}
-              </button>
+            <div className="flex gap-2 pt-2">
+              {isCartLoading ? (
+                <div className="flex-1 h-14 bg-zinc-100 animate-pulse" />
+              ) : cartQuantity > 0 ? (
+                <div className="flex-1 flex items-center border border-zinc-200">
+                  <button
+                    onClick={() => handleQuantityChange(-1)}
+                    disabled={isPending}
+                    className="px-4 h-14 text-lg hover:bg-zinc-50 transition-colors disabled:opacity-40"
+                  >
+                    <Minus className="w-4 h-4" />
+                  </button>
+                  <span className="flex-1 text-center text-sm font-semibold">{cartQuantity}</span>
+                  <button
+                    onClick={() => handleQuantityChange(1)}
+                    disabled={isPending || cartQuantity >= (activeVariant?.stock ?? 0)}
+                    className="px-4 h-14 text-lg hover:bg-zinc-50 transition-colors disabled:opacity-40"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={handleAddToCart}
+                  disabled={!inStock || isPending}
+                  className={`flex-1 flex items-center justify-center gap-2 py-4 text-sm font-semibold uppercase tracking-widest transition-colors ${
+                    inStock
+                      ? 'bg-black text-white hover:bg-zinc-800'
+                      : 'bg-zinc-100 text-zinc-400 cursor-not-allowed'
+                  }`}
+                >
+                  <ShoppingBag className="w-4 h-4" />
+                  {isPending ? 'Adding...' : inStock ? 'Add to Cart' : 'Out of Stock'}
+                </button>
+              )}
             </div>
 
             {product.description && (

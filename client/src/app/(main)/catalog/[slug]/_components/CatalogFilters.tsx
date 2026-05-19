@@ -2,14 +2,17 @@
 
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useState, useTransition } from 'react';
+import { useCallback, useEffect, useState, useTransition } from 'react';
 
-import { Category, Collection, Color, ProductListItem } from '@/types/product';
+import { Slider } from '@/components/ui/slider';
+import { Category, Collection, Color, Gender, GenderLabel, ProductListItem } from '@/types/product';
 
 interface Props {
   products: ProductListItem[];
   categories: Category[];
   collections: Collection[];
+  minPriceLimit: number;
+  maxPriceLimit: number;
 }
 
 function FilterSection({
@@ -38,15 +41,41 @@ function FilterSection({
   );
 }
 
-export function CatalogFilters({ products, categories, collections }: Props) {
+export function CatalogFilters({
+  products,
+  categories,
+  collections,
+  minPriceLimit,
+  maxPriceLimit,
+}: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [, startTransition] = useTransition();
+  const [isPending, startTransition] = useTransition();
 
-  const activeCategory = searchParams.get('categoryId');
-  const activeCollection = searchParams.get('collectionId');
+  const activeCategory = searchParams.get('category');
+  const activeCollection = searchParams.get('collection');
   const activeSize = searchParams.get('size');
-  const activeColor = searchParams.get('colorId');
+  const activeColor = searchParams.get('color');
+  const activeGender = searchParams.get('gender');
+  const paramMin = searchParams.get('minPrice');
+  const paramMax = searchParams.get('maxPrice');
+
+  const globalMin = minPriceLimit;
+  const globalMax = maxPriceLimit;
+
+  const [dragRange, setDragRange] = useState<[number, number] | null>(null);
+
+  useEffect(() => {
+    if (!isPending) {
+      const id = setTimeout(() => setDragRange(null), 0);
+      return () => clearTimeout(id);
+    }
+  }, [isPending]);
+
+  const currentRange: [number, number] = dragRange ?? [
+    paramMin ? Number(paramMin) : globalMin,
+    paramMax ? Number(paramMax) : globalMax,
+  ];
 
   const availableSizes = Array.from(
     new Set(products.flatMap((p) => p.variants.map((v) => v.size).filter((s): s is string => !!s))),
@@ -74,10 +103,41 @@ export function CatalogFilters({ products, categories, collections }: Props) {
     [router, searchParams],
   );
 
-  const hasFilters = activeCategory || activeCollection || activeSize || activeColor;
+  function handlePriceCommit(value: number[]) {
+    const [min, max] = value as [number, number];
+    const params = new URLSearchParams(searchParams.toString());
+
+    if (min <= globalMin) {
+      params.delete('minPrice');
+    } else {
+      params.set('minPrice', String(min));
+    }
+
+    if (max >= globalMax) {
+      params.delete('maxPrice');
+    } else {
+      params.set('maxPrice', String(max));
+    }
+
+    params.delete('page');
+
+    startTransition(() => {
+      router.push(`?${params.toString()}`);
+    });
+  }
+
+  const hasFilters =
+    activeCategory ||
+    activeCollection ||
+    activeSize ||
+    activeColor ||
+    activeGender ||
+    paramMin ||
+    paramMax;
 
   return (
     <aside className="w-64 shrink-0">
+      {/* Category */}
       <div className="border-b border-zinc-200 pb-4 mb-2">
         <p className="text-xs font-semibold uppercase tracking-widest text-zinc-800 mb-3">
           Category
@@ -85,7 +145,7 @@ export function CatalogFilters({ products, categories, collections }: Props) {
         <ul className="space-y-1">
           <li>
             <button
-              onClick={() => updateParam('categoryId', null)}
+              onClick={() => updateParam('category', null)}
               className={`text-sm w-full text-left py-0.5 transition-colors ${
                 !activeCategory ? 'font-semibold text-black' : 'text-zinc-500 hover:text-black'
               }`}
@@ -97,13 +157,10 @@ export function CatalogFilters({ products, categories, collections }: Props) {
             <li key={cat.id}>
               <button
                 onClick={() =>
-                  updateParam(
-                    'categoryId',
-                    activeCategory === cat.id.toString() ? null : cat.id.toString(),
-                  )
+                  updateParam('category', activeCategory === cat.slug ? null : cat.slug)
                 }
                 className={`text-sm w-full text-left py-0.5 transition-colors ${
-                  activeCategory === cat.id.toString()
+                  activeCategory === cat.slug
                     ? 'font-semibold text-black'
                     : 'text-zinc-500 hover:text-black'
                 }`}
@@ -119,20 +176,63 @@ export function CatalogFilters({ products, categories, collections }: Props) {
         Filters
       </p>
 
+      {/* Price */}
+      <FilterSection title="Price">
+        <div className="px-1 space-y-4">
+          <Slider
+            min={globalMin}
+            max={globalMax}
+            step={1}
+            value={currentRange}
+            onValueChange={(v) => setDragRange(v as [number, number])}
+            onValueCommit={(value) => {
+              handlePriceCommit(value);
+            }}
+            className="w-full"
+          />
+          <div className="flex items-center justify-between text-sm text-zinc-600">
+            <span>{currentRange[0]} $</span>
+            <span>{currentRange[1]} $</span>
+          </div>
+        </div>
+      </FilterSection>
+
+      {/* Gender */}
+      <FilterSection title="Gender">
+        <ul className="space-y-1">
+          {Object.values(Gender)
+            .filter((g) => g !== Gender.UNISEX)
+            .map((g) => {
+              const isActive = activeGender === g;
+              return (
+                <li key={g}>
+                  <button
+                    onClick={() => updateParam('gender', isActive ? null : g)}
+                    className={`text-sm w-full text-left py-0.5 transition-colors ${
+                      isActive ? 'font-semibold text-black' : 'text-zinc-500 hover:text-black'
+                    }`}
+                  >
+                    {GenderLabel[g]}
+                  </button>
+                </li>
+              );
+            })}
+        </ul>
+      </FilterSection>
+
+      {/* Collection */}
       {collections.length > 0 && (
         <FilterSection title="Collection">
           <ul className="space-y-2">
             {collections.map((col) => {
-              const isActive = activeCollection === col.id.toString();
+              const isActive = activeCollection === col.slug;
               return (
                 <li key={col.id}>
                   <label className="flex items-center gap-2 cursor-pointer group">
                     <input
                       type="checkbox"
                       checked={isActive}
-                      onChange={() =>
-                        updateParam('collectionId', isActive ? null : col.id.toString())
-                      }
+                      onChange={() => updateParam('collection', isActive ? null : col.slug)}
                       className="w-4 h-4 border-zinc-300 rounded-none accent-black cursor-pointer"
                     />
                     <span
@@ -150,6 +250,7 @@ export function CatalogFilters({ products, categories, collections }: Props) {
         </FilterSection>
       )}
 
+      {/* Size */}
       {availableSizes.length > 0 && (
         <FilterSection title="Size">
           <ul className="space-y-2">
@@ -179,15 +280,16 @@ export function CatalogFilters({ products, categories, collections }: Props) {
         </FilterSection>
       )}
 
+      {/* Color */}
       {availableColors.length > 0 && (
         <FilterSection title="Color">
-          <div className="flex flex-col flex-wrap gap-2">
+          <div className="flex flex-col gap-2">
             {availableColors.map((color) => {
-              const isActive = activeColor === color.id.toString();
+              const isActive = activeColor === color.name;
               return (
                 <button
                   key={color.id}
-                  onClick={() => updateParam('colorId', isActive ? null : color.id.toString())}
+                  onClick={() => updateParam('color', isActive ? null : color.name)}
                   title={color.name}
                   className="flex flex-row gap-2 items-center"
                 >
@@ -198,7 +300,7 @@ export function CatalogFilters({ products, categories, collections }: Props) {
                         : 'border-transparent hover:border-zinc-400'
                     }`}
                     style={{ backgroundColor: color.hexCode }}
-                  ></div>
+                  />
                   <span className="text-sm">{color.name}</span>
                 </button>
               );
@@ -207,10 +309,13 @@ export function CatalogFilters({ products, categories, collections }: Props) {
         </FilterSection>
       )}
 
-      {/* Скинути фільтри */}
+      {/* Clear */}
       {hasFilters && (
         <button
-          onClick={() => startTransition(() => router.push('?'))}
+          onClick={() => {
+            setDragRange(null);
+            startTransition(() => router.push('?'));
+          }}
           className="mt-4 text-xs text-zinc-400 hover:text-black transition-colors underline underline-offset-2"
         >
           Clear filters

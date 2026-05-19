@@ -11,12 +11,8 @@ class ProductService {
     const slug = slugify(name, { lowercase: true });
 
     const [existingSlug, existingSku] = await Promise.all([
-      prisma.product.findUnique({
-        where: { slug },
-      }),
-      prisma.productVariant.findUnique({
-        where: { sku: variant.sku },
-      }),
+      prisma.product.findUnique({ where: { slug } }),
+      prisma.productVariant.findUnique({ where: { sku: variant.sku } }),
     ]);
 
     if (existingSlug) throw ApiError.BadRequest('Product with this name already exists');
@@ -40,14 +36,8 @@ class ProductService {
         name,
         slug,
         description: description ?? null,
-        category: {
-          connect: { id: categoryId },
-        },
-        ...(collectionId && {
-          collection: {
-            connect: { id: collectionId },
-          },
-        }),
+        category: { connect: { id: categoryId } },
+        ...(collectionId && { collection: { connect: { id: collectionId } } }),
         gender: gender ?? 'UNISEX',
         images: {
           create: uploadedImages.map((uploaded, i) => ({
@@ -63,11 +53,7 @@ class ProductService {
             price: variant.price,
             salePrice: variant.salePrice ?? null,
             size: variant.size ?? null,
-            ...(variant.colorId && {
-              color: {
-                connect: { id: Number(variant.colorId) },
-              },
-            }),
+            ...(variant.colorId && { color: { connect: { id: Number(variant.colorId) } } }),
             stock: variant.stock ?? 0,
           },
         },
@@ -87,9 +73,7 @@ class ProductService {
     const product = await prisma.product.findUnique({ where: { id: productId } });
     if (!product) throw ApiError.BadRequest('Product not found');
 
-    const existingSku = await prisma.productVariant.findUnique({
-      where: { sku: variant.sku },
-    });
+    const existingSku = await prisma.productVariant.findUnique({ where: { sku: variant.sku } });
     if (existingSku) throw ApiError.BadRequest('SKU already in use');
 
     return prisma.productVariant.create({
@@ -102,9 +86,7 @@ class ProductService {
         colorId: variant.colorId ?? null,
         stock: variant.stock ?? 0,
       },
-      include: {
-        images: { include: { image: true } },
-      },
+      include: { images: { include: { image: true } } },
     });
   }
 
@@ -112,18 +94,13 @@ class ProductService {
     const product = await prisma.product.findUnique({
       where: { id },
       include: {
-        category: {
-          include: { sizes: true },
-        },
+        category: { include: { sizes: true } },
         collection: true,
         images: { orderBy: { order: 'asc' } },
         variants: {
           include: {
             color: true,
-            images: {
-              include: { image: true },
-              orderBy: { order: 'asc' },
-            },
+            images: { include: { image: true }, orderBy: { order: 'asc' } },
           },
         },
       },
@@ -143,10 +120,7 @@ class ProductService {
         variants: {
           include: {
             color: true,
-            images: {
-              include: { image: true },
-              orderBy: { order: 'asc' },
-            },
+            images: { include: { image: true }, orderBy: { order: 'asc' } },
           },
         },
         sizeChart: { include: { entries: { include: { measurements: true } } } },
@@ -186,19 +160,13 @@ class ProductService {
     if (data.collectionId !== undefined) updateData.collectionId = data.collectionId;
     if (data.gender !== undefined) updateData.gender = data.gender;
 
-    console.log('updateProduct data:', data);
-
     return prisma.product.update({
       where: { id },
       data: updateData,
       include: {
         collection: true,
         images: { orderBy: { order: 'asc' } },
-        variants: {
-          include: {
-            images: { include: { image: true } },
-          },
-        },
+        variants: { include: { images: { include: { image: true } } } },
       },
     });
   }
@@ -230,12 +198,8 @@ class ProductService {
   }
 
   async deleteVariant(variantId: number) {
-    const variant = await prisma.productVariant.findUnique({
-      where: { id: variantId },
-      include: { images: true },
-    });
+    const variant = await prisma.productVariant.findUnique({ where: { id: variantId } });
     if (!variant) throw ApiError.BadRequest('Variant not found');
-
     return prisma.productVariant.delete({ where: { id: variantId } });
   }
 
@@ -247,54 +211,99 @@ class ProductService {
     if (!product) throw ApiError.BadRequest('Product not found');
 
     await Promise.all(product.images.map((img) => uploadService.deleteImage(img.publicId)));
-
     return prisma.product.delete({ where: { id } });
   }
 
   async deleteImage(imageId: number) {
     const image = await prisma.productImage.findUnique({ where: { id: imageId } });
     if (!image) throw ApiError.BadRequest('Image not found');
-
     if (!image.publicId) throw ApiError.BadRequest('Invalid image URL');
-    await uploadService.deleteImage(image.publicId);
 
+    await uploadService.deleteImage(image.publicId);
     return prisma.productImage.delete({ where: { id: imageId } });
   }
 
   async getProducts(filters?: {
     search?: string;
-    categoryId?: number;
-    collectionId?: number;
+    category?: string;
+    collection?: string;
     gender?: string;
     size?: string;
-    colorId?: number;
+    color?: string;
     page?: number;
     limit?: number;
+    minPrice?: number;
+    maxPrice?: number;
   }) {
     const page = filters?.page ?? 1;
     const limit = filters?.limit ?? 10;
     const skip = (page - 1) * limit;
 
+    const priceConditions: any[] = [];
+    if (filters?.minPrice !== undefined) {
+      priceConditions.push({
+        OR: [
+          { salePrice: { gte: filters.minPrice } },
+          { AND: [{ salePrice: null }, { price: { gte: filters.minPrice } }] },
+        ],
+      });
+    }
+    if (filters?.maxPrice !== undefined) {
+      priceConditions.push({
+        OR: [
+          { salePrice: { lte: filters.maxPrice } },
+          { AND: [{ salePrice: null }, { price: { lte: filters.maxPrice } }] },
+        ],
+      });
+    }
+
     const filter = {
       ...(filters?.search
         ? { name: { contains: filters.search, mode: 'insensitive' as const } }
         : {}),
-      ...(filters?.collectionId ? { collectionId: filters.collectionId } : {}),
-      ...(filters?.categoryId ? { categoryId: filters.categoryId } : {}),
-      ...(filters?.gender ? { gender: filters.gender as any } : {}),
-      ...(filters?.size || filters?.colorId
+      ...(filters?.category ? { category: { slug: filters.category } } : {}),
+      ...(filters?.collection ? { collection: { slug: filters.collection } } : {}),
+      ...(filters?.gender
+        ? {
+            gender: {
+              in:
+                filters.gender === 'MAN' || filters.gender === 'WOMAN'
+                  ? [filters.gender, 'UNISEX']
+                  : [filters.gender],
+            } as any,
+          }
+        : {}),
+      ...(filters?.size || filters?.color || priceConditions.length > 0
         ? {
             variants: {
               some: {
-                ...(filters?.size ? { size: filters.size } : {}),
-                ...(filters?.colorId ? { colorId: filters.colorId } : {}),
+                AND: [
+                  ...(filters?.size ? [{ size: filters.size }] : []),
+                  ...(filters?.color ? [{ color: { name: filters.color } }] : []),
+                  ...priceConditions,
+                ],
               },
             },
           }
         : {}),
     };
 
-    const [items, total] = await Promise.all([
+    const priceLimitsFilter = {
+      ...(filters?.category ? { category: { slug: filters.category } } : {}),
+      ...(filters?.collection ? { collection: { slug: filters.collection } } : {}),
+      ...(filters?.gender
+        ? {
+            gender: {
+              in:
+                filters.gender === 'MAN' || filters.gender === 'WOMAN'
+                  ? [filters.gender, 'UNISEX']
+                  : [filters.gender],
+            } as any,
+          }
+        : {}),
+    };
+
+    const [items, total, priceAggregate] = await Promise.all([
       prisma.product.findMany({
         where: filter,
         skip,
@@ -311,23 +320,9 @@ class ProductService {
               salePrice: true,
               stock: true,
               size: true,
-              color: {
-                select: {
-                  id: true,
-                  name: true,
-                  hexCode: true,
-                },
-              },
+              color: { select: { id: true, name: true, hexCode: true } },
               images: {
-                select: {
-                  imageId: true,
-                  order: true,
-                  image: {
-                    select: {
-                      url: true,
-                    },
-                  },
-                },
+                select: { imageId: true, order: true, image: { select: { url: true } } },
                 take: 1,
                 orderBy: { order: 'asc' },
               },
@@ -336,7 +331,28 @@ class ProductService {
         },
       }),
       prisma.product.count({ where: filter }),
+      prisma.productVariant.aggregate({
+        where: {
+          product: priceLimitsFilter,
+        },
+        _min: { price: true, salePrice: true },
+        _max: { price: true, salePrice: true },
+      }),
     ]);
+
+    const globalMin = Math.floor(
+      Math.min(
+        Number(priceAggregate._min.price ?? 0),
+        Number(priceAggregate._min.salePrice ?? priceAggregate._min.price ?? 0),
+      ),
+    );
+
+    const globalMax = Math.ceil(
+      Math.max(
+        Number(priceAggregate._max.price ?? 9999),
+        Number(priceAggregate._max.salePrice ?? priceAggregate._max.price ?? 9999),
+      ),
+    );
 
     return {
       items,
@@ -344,6 +360,8 @@ class ProductService {
       page,
       limit,
       totalPages: Math.ceil(total / limit),
+      minPriceLimit: globalMin,
+      maxPriceLimit: globalMax,
     };
   }
 

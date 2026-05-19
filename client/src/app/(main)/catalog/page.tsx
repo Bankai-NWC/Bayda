@@ -5,33 +5,51 @@ import { getProductsAction } from '@/actions/product-actions';
 import { Pagination } from '@/components/ui/Pagination/Pagination';
 import { ProductCard } from '@/components/ui/ProductCard/ProductCard';
 
+import CatalogBreadcrumb from './[slug]/_components/CatalogBreadcrumb';
 import { CatalogFilters } from './[slug]/_components/CatalogFilters';
 
 interface Props {
   searchParams: Promise<{
-    categoryId?: string;
-    collectionId?: string;
+    category?: string;
+    collection?: string;
     size?: string;
-    colorId?: string;
+    color?: string;
     page?: string;
+    limit?: string;
+    minPrice?: string;
+    maxPrice?: string;
   }>;
 }
 
 export default async function CatalogPage({ searchParams }: Props) {
-  const filters = await searchParams;
+  const params = await searchParams;
+
+  const filters = {
+    ...params,
+    limit: params.limit ?? '12',
+    minPrice: params.minPrice ? Number(params.minPrice) : undefined,
+    maxPrice: params.maxPrice ? Number(params.maxPrice) : undefined,
+  };
 
   const [data, categories, collections] = await Promise.all([
     getProductsAction(filters),
     getCategoriesAction(),
     getCollectionsAction(),
   ]);
-  const activeColorId = filters.colorId ? Number(filters.colorId) : null;
+
+  const categoriesList = Array.isArray(categories) ? categories : [];
+
+  const currentCategory = categoriesList.find((cat) => cat.slug === filters.category);
+
+  const pageTitle = currentCategory ? currentCategory.name : 'All Products';
+
+  const activeColorName = filters.color ?? null;
 
   return (
     <main className="container mx-auto px-4 py-24">
       <div className="mb-8">
-        <p className="text-xs text-zinc-400 uppercase tracking-widest mb-1">Home / Catalog</p>
-        <h1 className="text-4xl font-black uppercase tracking-tight">All Products</h1>
+        <CatalogBreadcrumb />
+        <h1 className="text-4xl font-black uppercase tracking-tight">{pageTitle}</h1>
       </div>
 
       <div className="flex gap-10">
@@ -40,6 +58,8 @@ export default async function CatalogPage({ searchParams }: Props) {
             products={data.items}
             categories={Array.isArray(categories) ? categories : []}
             collections={collections}
+            minPriceLimit={data.minPriceLimit}
+            maxPriceLimit={data.maxPriceLimit}
           />
         </Suspense>
 
@@ -51,7 +71,7 @@ export default async function CatalogPage({ searchParams }: Props) {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {data.items.length > 0 ? (
               data.items.map((product) => (
-                <ProductCard key={product.id} product={product} activeColorId={activeColorId} />
+                <ProductCard key={product.id} product={product} activeColorName={activeColorName} />
               ))
             ) : (
               <p className="text-zinc-400 col-span-full text-center py-16">No products found</p>
@@ -59,10 +79,7 @@ export default async function CatalogPage({ searchParams }: Props) {
           </div>
 
           {data.totalPages > 1 && (
-            <div className="flex items-center justify-between mt-10">
-              <p className="text-sm text-zinc-500">
-                Showing {data.items.length} of {data.total}
-              </p>
+            <div className="flex items-center justify-center mt-10">
               <Pagination page={data.page} totalPages={data.totalPages} />
             </div>
           )}

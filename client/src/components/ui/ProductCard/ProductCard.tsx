@@ -10,15 +10,15 @@ import { WishlistButton } from '../WishlistButton/WishlistButton';
 
 export function ProductCard({
   product,
-  activeColorId,
+  activeColorName,
 }: {
   product: ProductListItem;
-  activeColorId?: number | null;
+  activeColorName?: string | null;
 }) {
   const colorVariants = product.variants.reduce(
     (acc, variant) => {
       if (!variant.color) return acc;
-      if (!acc.find((v) => v.color?.id === variant.color!.id)) {
+      if (!acc.find((v) => v.color?.name === variant.color!.name)) {
         acc.push(variant);
       }
       return acc;
@@ -26,22 +26,23 @@ export function ProductCard({
     [] as typeof product.variants,
   );
 
-  const hasColors = colorVariants.length > 0;
+  const hasColors = colorVariants.length > 1;
   const defaultImage = product.images?.[0]?.url;
 
-  const getVariantByColor = (colorId?: number | null) =>
-    colorId
-      ? (colorVariants.find((v) => v.color?.id === colorId) ?? colorVariants[0])
+  const getVariantByColor = (colorName?: string | null) =>
+    colorName
+      ? (colorVariants.find((v) => v.color?.name === colorName) ?? colorVariants[0])
       : colorVariants[0];
 
-  const [manualColorId, setManualColorId] = useState<number | null>(null);
-  const effectiveColorId = manualColorId ?? activeColorId ?? colorVariants[0]?.color?.id ?? null;
-  const activeVariant = getVariantByColor(effectiveColorId);
+  const [manualColorName, setManualColorName] = useState<string | null>(null);
+  const effectiveColorName =
+    manualColorName ?? activeColorName ?? colorVariants[0]?.color?.name ?? null;
+  const activeVariant = getVariantByColor(effectiveColorName);
   const activeImage = activeVariant?.images?.[0]?.image?.url || defaultImage;
 
   function handleColorClick(variant: (typeof product.variants)[0]) {
     if (!variant.color) return;
-    setManualColorId(variant.color.id);
+    setManualColorName(variant.color.name);
   }
 
   const minPrice = Math.min(...product.variants.map((v) => Number(v.price)));
@@ -50,8 +51,8 @@ export function ProductCard({
     ? Math.min(...product.variants.filter((v) => v.salePrice).map((v) => Number(v.salePrice)))
     : null;
 
-  const href = effectiveColorId
-    ? `/catalog/${product.slug}?colorId=${effectiveColorId}`
+  const href = effectiveColorName
+    ? `/catalog/${product.slug}?color=${effectiveColorName}`
     : `/catalog/${product.slug}`;
 
   return (
@@ -81,7 +82,7 @@ export function ProductCard({
                   }}
                   title={variant.color!.name}
                   className={`w-5 h-5 rounded-full border-2 transition-all shrink-0 ${
-                    effectiveColorId === variant.color!.id
+                    effectiveColorName === variant.color!.name
                       ? 'border-black scale-110'
                       : 'border-transparent hover:border-zinc-400'
                   }`}
@@ -92,18 +93,21 @@ export function ProductCard({
           </div>
         )}
 
+        {activeVariant?.id && (
+          <div className="absolute top-2 right-2 z-10 invisible group-hover:visible">
+            <WishlistButton
+              variantId={activeVariant?.id}
+              size="sm"
+              className="bg-white/80 p-1.5 rounded-full hover:bg-white"
+            />
+          </div>
+        )}
+
         {minSalePrice && (
           <div className="absolute top-2 left-2 bg-black text-white text-xs px-2 py-0.5 font-medium">
             SALE
           </div>
         )}
-        <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-          <WishlistButton
-            variantId={activeVariant?.id}
-            size="sm"
-            className="bg-white/80 backdrop-blur-sm p-1.5 rounded-full hover:bg-white"
-          />
-        </div>
       </div>
 
       <div className="space-y-0.5">

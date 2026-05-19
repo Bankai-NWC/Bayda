@@ -277,21 +277,28 @@ export async function assignVariantImagesAction(
 
 export async function getProductsAction(filters?: {
   search?: string;
-  categoryId?: string;
-  collectionId?: string;
+  category?: string;
+  collection?: string;
   gender?: string;
   size?: string;
-  colorId?: string;
-  page?: string;
+  color?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  page?: string | number;
+  limit?: string | number;
 }): Promise<ProductsResponse> {
   const params = new URLSearchParams();
+
   if (filters?.search) params.set('search', filters.search);
-  if (filters?.categoryId) params.set('categoryId', filters.categoryId);
-  if (filters?.collectionId) params.set('collectionId', filters.collectionId);
+  if (filters?.category) params.set('category', filters.category);
+  if (filters?.collection) params.set('collection', filters.collection);
   if (filters?.gender) params.set('gender', filters.gender);
   if (filters?.size) params.set('size', filters.size);
-  if (filters?.colorId) params.set('colorId', filters.colorId);
-  if (filters?.page) params.set('page', filters.page);
+  if (filters?.color) params.set('color', filters.color);
+  if (filters?.page) params.set('page', String(filters.page));
+  if (filters?.limit) params.set('limit', String(filters.limit));
+  if (filters?.minPrice !== undefined) params.set('minPrice', String(filters.minPrice));
+  if (filters?.maxPrice !== undefined) params.set('maxPrice', String(filters.maxPrice));
 
   const query = params.toString();
   return apiFetch<ProductsResponse>(`/products${query ? `?${query}` : ''}`);

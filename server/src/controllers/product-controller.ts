@@ -199,16 +199,19 @@ class ProductController {
 
   async getProducts(req: Request, res: Response, next: NextFunction) {
     try {
-      const { search, collectionId, categoryId, gender, size, colorId, page, limit } = req.query;
+      const { search, collection, category, gender, size, color, page, limit, minPrice, maxPrice } =
+        req.query;
       const products = await productService.getProducts({
-        search: search as string,
-        collectionId: collectionId ? Number(collectionId) : undefined,
-        categoryId: categoryId ? Number(categoryId) : undefined,
-        gender: gender as string,
-        size: size as string,
-        colorId: colorId ? Number(colorId) : undefined,
+        search: search as string | undefined,
+        collection: collection as string | undefined,
+        category: category as string | undefined,
+        gender: gender as string | undefined,
+        size: size as string | undefined,
+        color: color as string | undefined,
         page: page ? Number(page) : undefined,
         limit: limit ? Number(limit) : undefined,
+        minPrice: minPrice ? Number(minPrice) : undefined,
+        maxPrice: maxPrice ? Number(maxPrice) : undefined,
       });
       return res.json(products);
     } catch (err) {

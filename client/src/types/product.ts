@@ -79,6 +79,8 @@ export interface ProductsResponse {
   page: number;
   limit: number;
   totalPages: number;
+  minPriceLimit: number;
+  maxPriceLimit: number;
 }
 
 export type CreateProductFormState = {
