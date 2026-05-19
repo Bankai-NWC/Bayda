@@ -11,7 +11,24 @@ class CartService {
         include: {
           items: {
             include: {
-              variant: { include: { color: true, product: { include: { images: true } } } },
+              variant: {
+                include: {
+                  color: true,
+                  images: {
+                    include: { image: true },
+                    orderBy: { order: 'asc' },
+                    take: 1,
+                  },
+                  product: {
+                    include: {
+                      images: {
+                        where: { isMain: true },
+                        take: 1,
+                      },
+                    },
+                  },
+                },
+              },
             },
           },
         },
