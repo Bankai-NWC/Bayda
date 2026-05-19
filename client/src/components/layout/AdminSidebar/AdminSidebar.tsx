@@ -18,34 +18,40 @@ function AdminSidebar() {
           |01| Main Panel
         </Link>
         <Link
+          href={'/admin/orders'}
+          className={cn('uppercase text-sm', isActive('/admin/orders') ? 'font-semibold' : '')}
+        >
+          |02| Orders
+        </Link>
+        <Link
           href={'/admin/products'}
           className={cn('uppercase text-sm', isActive('/admin/products') ? 'font-semibold' : '')}
         >
-          |02| Product
+          |03| Product
         </Link>
         <Link
           href={'/admin/categories'}
           className={cn('uppercase text-sm', isActive('/admin/categories') ? 'font-semibold' : '')}
         >
-          |03| Categories
+          |04| Categories
         </Link>
         <Link
           href={'/admin/collections'}
           className={cn('uppercase text-sm', isActive('/admin/collections') ? 'font-semibold' : '')}
         >
-          |04| Collections
+          |05| Collections
         </Link>
         <Link
           href={'/admin/colors'}
           className={cn('uppercase text-sm', isActive('/admin/colors') ? 'font-semibold' : '')}
         >
-          |05| Colors
+          |06| Colors
         </Link>
         <Link
           href={'/'}
           className={cn('uppercase text-sm', isActive('/admin/wishlist') ? 'font-semibold' : '')}
         >
-          |06| Back to shop
+          |07| Back to shop
         </Link>
       </div>
     </nav>

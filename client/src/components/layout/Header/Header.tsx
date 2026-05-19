@@ -2,7 +2,7 @@
 
 import { Bookmark, LoaderCircle, LogOut, Search, ShieldCheck, ShoppingBag } from 'lucide-react';
 import Link from 'next/link';
-import { useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 
 import { logoutAction } from '@/actions/auth-actions';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -21,6 +21,19 @@ import { useUserStore } from '@/store/useUserStore';
 export function Header() {
   const { user, clearUser } = useUserStore();
   const [isPending, startTransition] = useTransition();
+  const [visible, setVisible] = useState(true);
+  const lastScrollY = useRef(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      setVisible(currentScrollY < lastScrollY.current || currentScrollY < 10);
+      lastScrollY.current = currentScrollY;
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const handleLogout = () => {
     startTransition(async () => {
@@ -30,7 +43,11 @@ export function Header() {
   };
 
   return (
-    <header className="absolute top-0 z-50 w-full border-b bg-white">
+    <header
+      className={`fixed top-0 z-50 w-full border-b bg-white transition-transform duration-300 ${
+        visible ? 'translate-y-0' : '-translate-y-full'
+      }`}
+    >
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link href="/" className="text-2xl font-bold tracking-tighter">
           BAYDA
@@ -46,9 +63,9 @@ export function Header() {
             <div className="flex items-center gap-4">
               <Link href="/user/cart" className="relative">
                 <ShoppingBag className="h-4.5 w-4.5" />
-                <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
+                {/* <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
                   0
-                </span>
+                </span> */}
               </Link>
               <Link href="/user/wishlist" className="relative">
                 <Bookmark className="h-4.5 w-4.5" />
@@ -91,10 +108,10 @@ export function Header() {
                   <Link href="/user/profile">Profile</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/orders">My orders</Link>
+                  <Link href="/user/orders">My orders</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/wishlist">Wishlist</Link>
+                  <Link href="/user/wishlist">Wishlist</Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem

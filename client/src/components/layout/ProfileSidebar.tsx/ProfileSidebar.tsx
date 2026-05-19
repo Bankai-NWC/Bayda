@@ -23,10 +23,16 @@ function ProfileSidebar() {
         |02| Orders
       </Link>
       <Link
+        href={'/user/cart'}
+        className={cn('uppercase text-sm', isActive('/user/cart') ? 'font-semibold' : '')}
+      >
+        |03| Cart
+      </Link>
+      <Link
         href={'/user/wishlist'}
         className={cn('uppercase text-sm', isActive('/user/wishlist') ? 'font-semibold' : '')}
       >
-        |03| Wishlist
+        |04| Wishlist
       </Link>
     </aside>
   );

@@ -6,8 +6,11 @@ import express from 'express';
 
 import { ProductRoutes, UserRoutes } from './config/routes.config.js';
 import { errorMiddleware } from './middlewares/error-middleware.js';
+import analyticsRouter from './routes/analytics-router.js';
+import cartRouter from './routes/cart-router.js';
 import catalogRouter from './routes/catalog-router.js';
 import colorRouter from './routes/color-routee.js';
+import orderRouter from './routes/order-router.js';
 import productRouter from './routes/product-router.js';
 import userRouter from './routes/user-routes.js';
 import wishlistRouter from './routes/wishlist-router.js';
@@ -29,7 +32,10 @@ app.use(UserRoutes.BASE, userRouter);
 app.use(ProductRoutes.BASE, productRouter);
 app.use('/api', colorRouter);
 app.use('/api/catalog', catalogRouter);
+app.use('/api/cart', cartRouter);
+app.use('/api/orders', orderRouter);
 app.use('/api/wishlist', wishlistRouter);
+app.use('/api/analytics', analyticsRouter);
 app.use(errorMiddleware);
 
 const start = async () => {
