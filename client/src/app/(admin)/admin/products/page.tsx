@@ -12,8 +12,8 @@ import { ProductTable } from './_components/ProductTable';
 interface Props {
   searchParams: Promise<{
     search?: string;
-    categoryId?: string;
-    collectionId?: string;
+    category?: string;
+    collection?: string;
     gender?: string;
     page?: string;
   }>;

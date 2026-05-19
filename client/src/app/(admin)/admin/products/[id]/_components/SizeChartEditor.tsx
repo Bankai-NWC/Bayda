@@ -32,7 +32,6 @@ export function SizeChartEditor({ productId }: { productId: number }) {
   useEffect(() => {
     getSizeChartAction(productId).then((chart) => {
       if (chart?.entries.length) {
-        // Восстанавливаем названия мерок из существующих данных
         const names = [...new Set(chart.entries.flatMap((e) => e.measurements.map((m) => m.name)))];
         setMeasurementNames(names);
 
@@ -139,7 +138,6 @@ export function SizeChartEditor({ productId }: { productId: number }) {
       </CardHeader>
 
       <CardContent className="px-6 space-y-6">
-        {/* Управление мерками */}
         <div className="space-y-2">
           <p className="text-sm font-medium">Measurements</p>
           <div className="flex flex-wrap gap-2">
@@ -173,7 +171,6 @@ export function SizeChartEditor({ productId }: { productId: number }) {
           </div>
         </div>
 
-        {/* Таблица размеров */}
         {rows.length > 0 && (
           <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse">

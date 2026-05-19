@@ -20,8 +20,8 @@ interface Props {
   categories: Category[];
   filters: {
     search?: string;
-    collectionId?: string;
-    categoryId?: string;
+    collection?: string;
+    category?: string;
     gender?: string;
   };
 }
@@ -77,7 +77,7 @@ export function ProductFilters({ collections, categories, filters }: Props) {
     });
   }
 
-  const hasFilters = filters.search || filters.categoryId || filters.collectionId;
+  const hasFilters = filters.search || filters.category || filters.collection;
 
   return (
     <div className="flex flex-wrap gap-3 items-center">
@@ -92,8 +92,8 @@ export function ProductFilters({ collections, categories, filters }: Props) {
       </div>
 
       <Select
-        value={filters.collectionId ?? 'all'}
-        onValueChange={(v) => updateFilter('collectionId', v)}
+        value={filters.collection ?? 'all'}
+        onValueChange={(v) => updateFilter('collection', v)}
       >
         <SelectTrigger className="w-[160px] bg-white">
           <SelectValue placeholder="All collections" />
@@ -101,24 +101,21 @@ export function ProductFilters({ collections, categories, filters }: Props) {
         <SelectContent>
           <SelectItem value="all">All collections</SelectItem>
           {collections.map((c) => (
-            <SelectItem key={c.id} value={c.id.toString()}>
+            <SelectItem key={c.id} value={c.slug}>
               {c.name}
             </SelectItem>
           ))}
         </SelectContent>
       </Select>
 
-      <Select
-        value={filters.categoryId ?? 'all'}
-        onValueChange={(v) => updateFilter('categoryId', v)}
-      >
+      <Select value={filters.category ?? 'all'} onValueChange={(v) => updateFilter('category', v)}>
         <SelectTrigger className="w-[160px] bg-white">
           <SelectValue placeholder="All categories" />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">All categories</SelectItem>
           {categories.map((c) => (
-            <SelectItem key={c.id} value={c.id.toString()}>
+            <SelectItem key={c.id} value={c.slug}>
               {c.name}
             </SelectItem>
           ))}

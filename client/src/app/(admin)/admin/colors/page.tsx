@@ -1,13 +1,13 @@
 'use client';
 
 import { Loader2, Plus, Trash2 } from 'lucide-react';
-import { useSearchParams } from 'next/navigation'; // Импортируем для чтения URL
+import { useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
 import { deleteColorAction, getColorsAction } from '@/actions/catalog-actions';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog/ConfirmDialog';
-import { Pagination } from '@/components/ui/Pagination/Pagination'; // Твой новый компонент
+import { Pagination } from '@/components/ui/Pagination/Pagination';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import type { Color } from '@/types/product';
 
@@ -47,13 +47,6 @@ export default function ColorsPage() {
     fetchColors(currentPage);
   }, [currentPage, fetchColors]);
 
-  // const handleDelete = async (id: number) => {
-  //   if (!confirm('Delete this color?')) return;
-  //   const result = await deleteColorAction(id);
-  //   if (result.success) {
-  //     fetchColors(currentPage);
-  //   }
-  // };
   async function handleDelete() {
     if (!confirmId) return;
     setIsDeleting(true);
